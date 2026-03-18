@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gameplay Generator | YO4K MODZ - DayZ Server Tools</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #18181b;
+            --bg-card: #1c1c1f;
+            --border: #27272a;
+            --border-accent: #3f3f46;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #22c55e;
+            --accent-dim: rgba(34, 197, 94, 0.15);
+            --warning: #f59e0b;
+            --warning-dim: rgba(245, 158, 11, 0.15);
+            --info: #3b82f6;
+            --info-dim: rgba(59, 130, 246, 0.15);
+            --danger: #ef4444;
+            --purple: #a855f7;
+            --cyan: #06b6d4;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Grotesk', sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .app { display: flex; flex-direction: column; min-height: 100vh; }
+        header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        .header-title h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+        .header-title h1 span { color: var(--accent); }
+        .header-sub { font-size: 0.75rem; color: var(--text-muted); }
+        .header-actions { display: flex; gap: 0.5rem; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; font-family: inherit; font-size: 0.8125rem; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
+        .btn-primary { background: var(--accent); color: var(--bg-primary); }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--bg-card); color: var(--text-primary); }
+        .main-content { display: grid; grid-template-columns: 280px 1fr; flex: 1; overflow: hidden; }
+        .sidebar { background: var(--bg-secondary); border-right: 1px solid var(--border); overflow-y: auto; padding: 1rem; }
+        .nav-section { margin-bottom: 1.5rem; }
+        .nav-section-title { font-size: 0.6875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; padding-bottom: 0.375rem; border-bottom: 1px solid var(--border); }
+        .nav-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 0.75rem; font-size: 0.8125rem; color: var(--text-secondary); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; margin-bottom: 0.25rem; }
+        .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+        .nav-item .badge { margin-left: auto; font-size: 0.625rem; padding: 0.125rem 0.375rem; background: var(--bg-tertiary); border-radius: 4px; color: var(--text-muted); }
+        .nav-item.active .badge { background: var(--accent); color: var(--bg-primary); }
+        .editor-panel { display: flex; flex-direction: column; overflow: hidden; }
+        .editor-body { flex: 1; overflow-y: auto; padding: 1.5rem; }
+        .section-panel { display: none; }
+        .section-panel.active { display: block; }
+        .form-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+        .form-section-title { font-size: 0.875rem; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
+        .form-section-title .icon { color: var(--accent); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .form-group { display: flex; flex-direction: column; gap: 0.375rem; }
+        .form-group label { font-size: 0.6875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+        .form-group input, .form-group select { padding: 0.5rem 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+        .form-group .hint { font-size: 0.625rem; color: var(--text-muted); }
+        .toggle-group { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 0.5rem; }
+        .toggle-label { font-size: 0.8125rem; color: var(--text-secondary); }
+        .toggle-label .desc { display: block; font-size: 0.6875rem; color: var(--text-muted); margin-top: 0.125rem; }
+        .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: var(--border); border-radius: 12px; transition: 0.3s; }
+        .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: var(--text-primary); border-radius: 50%; transition: 0.3s; }
+        .toggle input:checked + .toggle-slider { background: var(--accent); }
+        .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+        .temp-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 0.5rem; }
+        .temp-month { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; }
+        .temp-month label { font-size: 0.625rem; color: var(--text-muted); text-transform: uppercase; }
+        .temp-month input { width: 100%; padding: 0.375rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); text-align: center; }
+        .temp-month input:focus { outline: none; border-color: var(--accent); }
+        .temp-month input.min { border-left: 2px solid var(--info); }
+        .temp-month input.max { border-left: 2px solid var(--danger); }
+        .preset-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .preset-btn { padding: 0.375rem 0.75rem; font-family: inherit; font-size: 0.75rem; font-weight: 500; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; }
+        .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .info-box { display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; background: var(--info-dim); border: 1px solid var(--info); border-radius: 8px; margin-bottom: 1rem; }
+        .info-box .icon { font-size: 1rem; color: var(--info); flex-shrink: 0; }
+        .info-box .content { font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; }
+        .info-box .content strong { color: var(--info); }
+        .info-box.warning { background: var(--warning-dim); border-color: var(--warning); }
+        .info-box.warning .icon, .info-box.warning .content strong { color: var(--warning); }
+        .preview-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .preview-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); }
+        .preview-title { font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary); }
+        .preview-body { padding: 1rem; max-height: 500px; overflow-y: auto; }
+        .preview-body pre { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+        .preview-body .key { color: var(--purple); }
+        .preview-body .string { color: var(--accent); }
+        .preview-body .number { color: var(--cyan); }
+        .preview-body .boolean { color: var(--warning); }
+        footer { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); }
+        .status-indicator { display: flex; align-items: center; gap: 0.5rem; }
+        .status-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        @media (max-width: 1024px) { .main-content { grid-template-columns: 1fr; } .sidebar { display: none; } .form-grid-3 { grid-template-columns: repeat(2, 1fr); } .temp-grid { grid-template-columns: repeat(6, 1fr); } }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header>
+            <div class="header-title">
+                <div>
+                    <h1>Gameplay <span>Generator</span></h1>
+                    <div class="header-sub">cfggameplay.json Builder</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="loadVanilla()">Load Vanilla</button>
+                <button class="btn btn-secondary" onclick="resetAll()">Reset</button>
+                <label class="btn btn-secondary" style="cursor:pointer">Import<input type="file" id="fileImport" accept=".json" style="display:none" onchange="importJSON(event)"></label>
+                <button class="btn btn-primary" onclick="exportJSON()">Export JSON</button>
+            </div>
+        </header>
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="nav-section">
+                    <div class="nav-section-title">General</div>
+                    <div class="nav-item active" data-section="general" onclick="showSection('general')"><span class="icon">⚙</span>General Settings</div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Player Data</div>
+                    <div class="nav-item" data-section="stamina" onclick="showSection('stamina')"><span class="icon">⚡</span>Stamina<span class="badge">11</span></div>
+                    <div class="nav-item" data-section="shock" onclick="showSection('shock')"><span class="icon">💫</span>Shock<span class="badge">3</span></div>
+                    <div class="nav-item" data-section="movement" onclick="showSection('movement')"><span class="icon">🏃</span>Movement<span class="badge">6</span></div>
+                    <div class="nav-item" data-section="drowning" onclick="showSection('drowning')"><span class="icon">🌊</span>Drowning<span class="badge">3</span></div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">World Data</div>
+                    <div class="nav-item" data-section="world" onclick="showSection('world')"><span class="icon">🌍</span>World Settings</div>
+                    <div class="nav-item" data-section="temperature" onclick="showSection('temperature')"><span class="icon">🌡</span>Temperature<span class="badge">24</span></div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Base Building</div>
+                    <div class="nav-item" data-section="hologram" onclick="showSection('hologram')"><span class="icon">🔨</span>Placement<span class="badge">10</span></div>
+                    <div class="nav-item" data-section="construction" onclick="showSection('construction')"><span class="icon">🏗</span>Construction<span class="badge">3</span></div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">UI & Map</div>
+                    <div class="nav-item" data-section="map" onclick="showSection('map')"><span class="icon">🗺</span>Map<span class="badge">5</span></div>
+                    <div class="nav-item" data-section="hitindicator" onclick="showSection('hitindicator')"><span class="icon">🎯</span>Hit Indicator<span class="badge">8</span></div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Output</div>
+                    <div class="nav-item" data-section="preview" onclick="showSection('preview')"><span class="icon">📄</span>JSON Preview</div>
+                </div>
+            </aside>
+            <div class="editor-panel">
+                <div class="editor-body">
+                    <!-- General -->
+                    <div class="section-panel active" id="section-general">
+                        <div class="info-box"><span class="icon">ℹ</span><div class="content"><strong>cfggameplay.json</strong> controls core gameplay. Add <strong>enableCfgGameplayFile = 1;</strong> to serverDZ.cfg to enable.</div></div>
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">⚙</span>General Data</div>
+                            <div class="form-grid form-grid-3"><div class="form-group"><label>DayZ Version</label><select id="dayzVersion" onchange="updateVersionFromDayz()"><option value="129" selected>1.29 (Current)</option><option value="128">1.28</option><option value="127">1.27</option></select><span class="hint">Match your server</span></div><div class="form-group"><label>Config Version</label><input type="number" id="version" value="129" readonly><span class="hint">Auto-set from DayZ version</span></div></div>
+                            <div style="margin-top:1rem">
+                                <div class="toggle-group"><div class="toggle-label">Disable Respawn Point<span class="desc">Disable respawn at last logout position</span></div><label class="toggle"><input type="checkbox" id="disableRespawnPoint"><span class="toggle-slider"></span></label></div></div>
+                            <div style="margin-top:1rem">
+                                <div class="toggle-group"><div class="toggle-label">Disable Base Damage<span class="desc">Prevent damage to base structures</span></div><label class="toggle"><input type="checkbox" id="disableBaseDamage"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-group"><div class="toggle-label">Disable Container Damage<span class="desc">Prevent damage to tents, barrels</span></div><label class="toggle"><input type="checkbox" id="disableContainerDamage"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-group"><div class="toggle-label">Disable Respawn Dialog<span class="desc">Remove respawn type selection</span></div><label class="toggle"><input type="checkbox" id="disableRespawnDialog"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-group"><div class="toggle-label">Disable Respawn In Unconsciousness<span class="desc">Remove respawn when unconscious</span></div><label class="toggle"><input type="checkbox" id="disableRespawnInUnconsciousness"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-group"><div class="toggle-label">Disable Personal Light<span class="desc">Remove ambient player light at night</span></div><label class="toggle"><input type="checkbox" id="disablePersonalLight"><span class="toggle-slider"></span></label></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Stamina -->
+                    <div class="section-panel" id="section-stamina">
+                        <div class="preset-bar"><span style="font-size:0.75rem;color:var(--text-muted)">Presets:</span><button class="preset-btn" onclick="applyStaminaPreset('vanilla')">Vanilla</button><button class="preset-btn" onclick="applyStaminaPreset('unlimited')">Unlimited</button><button class="preset-btn" onclick="applyStaminaPreset('hardcore')">Hardcore</button><button class="preset-btn" onclick="applyStaminaPreset('pvp')">PvP</button></div>
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">⚡</span>Stamina Settings</div>
+                            <div class="form-grid form-grid-3">
+                                <div class="form-group"><label>Stamina Max</label><input type="number" id="staminaMax" value="100" step="0.1"><span class="hint">Maximum capacity</span></div>
+                                <div class="form-group"><label>Stamina Min Cap</label><input type="number" id="staminaMinCap" value="5" step="0.1"><span class="hint">Minimum threshold</span></div>
+                                <div class="form-group"><label>Weight Limit Threshold</label><input type="number" id="staminaWeightLimitThreshold" value="6000" step="100"><span class="hint">Exempt weight (g)</span></div>
+                                <div class="form-group"><label>KG to Stamina Penalty</label><input type="number" id="staminaKgToStaminaPercentPenalty" value="1.75" step="0.01"><span class="hint">Weight penalty mult</span></div>
+                            </div>
+                        </div>
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🏃</span>Sprint Modifiers</div>
+                            <div class="form-grid form-grid-3">
+                                <div class="form-group"><label>Sprint Erect</label><input type="number" id="sprintStaminaModifierErc" value="1.0" step="0.01"></div>
+                                <div class="form-group"><label>Sprint Crouch</label><input type="number" id="sprintStaminaModifierCro" value="1.0" step="0.01"></div>
+                                <div class="form-group"><label>Swimming</label><input type="number" id="sprintSwimmingStaminaModifier" value="1.0" step="0.01"></div>
+                                <div class="form-group"><label>Ladder</label><input type="number" id="sprintLadderStaminaModifier" value="1.0" step="0.01"></div>
+                                <div class="form-group"><label>Melee</label><input type="number" id="meleeStaminaModifier" value="1.0" step="0.01"></div>
+                                <div class="form-group"><label>Obstacle Traversal</label><input type="number" id="obstacleTraversalStaminaModifier" value="1.0" step="0.01"></div>
+                                <div class="form-group"><label>Hold Breath</label><input type="number" id="holdBreathStaminaModifier" value="1.0" step="0.01"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Shock -->
+                    <div class="section-panel" id="section-shock">
+                        <div class="preset-bar"><span style="font-size:0.75rem;color:var(--text-muted)">Presets:</span><button class="preset-btn" onclick="applyShockPreset('vanilla')">Vanilla</button><button class="preset-btn" onclick="applyShockPreset('fast')">Fast Recovery</button><button class="preset-btn" onclick="applyShockPreset('slow')">Slow</button></div>
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">💫</span>Shock Handling</div>
+                            <div class="form-grid form-grid-3">
+                                <div class="form-group"><label>Refill Conscious</label><input type="number" id="shockRefillSpeedConscious" value="5.0" step="0.1"><span class="hint">Per second when awake</span></div>
+                                <div class="form-group"><label>Refill Unconscious</label><input type="number" id="shockRefillSpeedUnconscious" value="1.0" step="0.1"><span class="hint">Per second when KO</span></div>
+                            </div>
+                            <div style="margin-top:1rem"><div class="toggle-group"><div class="toggle-label">Allow Refill Speed Modifier<span class="desc">Ammo-type shock recovery</span></div><label class="toggle"><input type="checkbox" id="allowRefillSpeedModifier" checked><span class="toggle-slider"></span></label></div></div>
+                        </div>
+                    </div>
+                    <!-- Movement -->
+                    <div class="section-panel" id="section-movement">
+                        <div class="preset-bar"><span style="font-size:0.75rem;color:var(--text-muted)">Presets:</span><button class="preset-btn" onclick="applyMovementPreset('vanilla')">Vanilla</button><button class="preset-btn" onclick="applyMovementPreset('responsive')">Responsive</button><button class="preset-btn" onclick="applyMovementPreset('heavy')">Heavy</button></div>
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🏃</span>Movement / Inertia</div>
+                            <div class="form-grid form-grid-3">
+                                <div class="form-group"><label>Time to Strafe Jog</label><input type="number" id="timeToStrafeJog" value="0.1" step="0.01" min="0.01"></div>
+                                <div class="form-group"><label>Rotation Speed Jog</label><input type="number" id="rotationSpeedJog" value="0.3" step="0.01" min="0.01"></div>
+                                <div class="form-group"><label>Time to Sprint</label><input type="number" id="timeToSprint" value="0.45" step="0.01" min="0.01"></div>
+                                <div class="form-group"><label>Time to Strafe Sprint</label><input type="number" id="timeToStrafeSprint" value="0.3" step="0.01" min="0.01"></div>
+                                <div class="form-group"><label>Rotation Speed Sprint</label><input type="number" id="rotationSpeedSprint" value="0.15" step="0.01" min="0.01"></div>
+                            </div>
+                            <div style="margin-top:1rem"><div class="toggle-group"><div class="toggle-label">Allow Stamina Affect Inertia<span class="desc">Stamina influences inertia</span></div><label class="toggle"><input type="checkbox" id="allowStaminaAffectInertia" checked><span class="toggle-slider"></span></label></div></div>
+                        </div>
+                    </div>
+                    <!-- Drowning -->
+                    <div class="section-panel" id="section-drowning">
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🌊</span>Drowning Data</div>
+                            <div class="form-grid form-grid-3">
+                                <div class="form-group"><label>Stamina Depletion</label><input type="number" id="drowningStaminaDepletionSpeed" value="10.0" step="0.1"><span class="hint">Per second</span></div>
+                                <div class="form-group"><label>Health Depletion</label><input type="number" id="drowningHealthDepletionSpeed" value="10.0" step="0.1"><span class="hint">Per second</span></div>
+                                <div class="form-group"><label>Shock Depletion</label><input type="number" id="drowningShockDepletionSpeed" value="10.0" step="0.1"><span class="hint">Per second</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- World -->
+                    <div class="section-panel" id="section-world">
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🌍</span>World Settings</div>
+                            <div class="form-grid"><div class="form-group"><label>Lighting Config</label><select id="lightingConfig"><option value="0">0 - Bright Nights</option><option value="1" selected>1 - Dark Nights</option><option value="2">2 - Sakhal</option></select></div></div>
+                        </div>
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">💧</span>Wetness Weight Modifiers</div>
+                            <div class="form-grid" style="grid-template-columns:repeat(5,1fr)">
+                                <div class="form-group"><label>Dry</label><input type="number" id="wetnessModDry" value="1.0" step="0.01"></div>
+                                <div class="form-group"><label>Damp</label><input type="number" id="wetnessModDamp" value="1.0" step="0.01"></div>
+                                <div class="form-group"><label>Wet</label><input type="number" id="wetnessModWet" value="1.33" step="0.01"></div>
+                                <div class="form-group"><label>Soaked</label><input type="number" id="wetnessModSoaked" value="1.66" step="0.01"></div>
+                                <div class="form-group"><label>Drenched</label><input type="number" id="wetnessModDrenched" value="2.0" step="0.01"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Temperature -->
+                    <div class="section-panel" id="section-temperature">
+                        <div class="preset-bar"><span style="font-size:0.75rem;color:var(--text-muted)">Presets:</span><button class="preset-btn" onclick="applyTempPreset('chernarus')">Chernarus</button><button class="preset-btn" onclick="applyTempPreset('livonia')">Livonia</button><button class="preset-btn" onclick="applyTempPreset('sakhal')">Sakhal</button><button class="preset-btn" onclick="applyTempPreset('tropical')">Tropical</button><button class="preset-btn" onclick="applyTempPreset('arctic')">Arctic</button></div>
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🌡</span>Min Temps (°C)</div>
+                            <div class="temp-grid">
+                                <div class="temp-month"><label>Jan</label><input type="number" class="min" id="minTemp0" value="-3"></div>
+                                <div class="temp-month"><label>Feb</label><input type="number" class="min" id="minTemp1" value="-2"></div>
+                                <div class="temp-month"><label>Mar</label><input type="number" class="min" id="minTemp2" value="0"></div>
+                                <div class="temp-month"><label>Apr</label><input type="number" class="min" id="minTemp3" value="4"></div>
+                                <div class="temp-month"><label>May</label><input type="number" class="min" id="minTemp4" value="9"></div>
+                                <div class="temp-month"><label>Jun</label><input type="number" class="min" id="minTemp5" value="14"></div>
+                                <div class="temp-month"><label>Jul</label><input type="number" class="min" id="minTemp6" value="18"></div>
+                                <div class="temp-month"><label>Aug</label><input type="number" class="min" id="minTemp7" value="17"></div>
+                                <div class="temp-month"><label>Sep</label><input type="number" class="min" id="minTemp8" value="12"></div>
+                                <div class="temp-month"><label>Oct</label><input type="number" class="min" id="minTemp9" value="7"></div>
+                                <div class="temp-month"><label>Nov</label><input type="number" class="min" id="minTemp10" value="4"></div>
+                                <div class="temp-month"><label>Dec</label><input type="number" class="min" id="minTemp11" value="0"></div>
+                            </div>
+                        </div>
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🌡</span>Max Temps (°C)</div>
+                            <div class="temp-grid">
+                                <div class="temp-month"><label>Jan</label><input type="number" class="max" id="maxTemp0" value="3"></div>
+                                <div class="temp-month"><label>Feb</label><input type="number" class="max" id="maxTemp1" value="5"></div>
+                                <div class="temp-month"><label>Mar</label><input type="number" class="max" id="maxTemp2" value="7"></div>
+                                <div class="temp-month"><label>Apr</label><input type="number" class="max" id="maxTemp3" value="14"></div>
+                                <div class="temp-month"><label>May</label><input type="number" class="max" id="maxTemp4" value="19"></div>
+                                <div class="temp-month"><label>Jun</label><input type="number" class="max" id="maxTemp5" value="24"></div>
+                                <div class="temp-month"><label>Jul</label><input type="number" class="max" id="maxTemp6" value="26"></div>
+                                <div class="temp-month"><label>Aug</label><input type="number" class="max" id="maxTemp7" value="25"></div>
+                                <div class="temp-month"><label>Sep</label><input type="number" class="max" id="maxTemp8" value="21"></div>
+                                <div class="temp-month"><label>Oct</label><input type="number" class="max" id="maxTemp9" value="16"></div>
+                                <div class="temp-month"><label>Nov</label><input type="number" class="max" id="maxTemp10" value="10"></div>
+                                <div class="temp-month"><label>Dec</label><input type="number" class="max" id="maxTemp11" value="5"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Hologram -->
+                    <div class="section-panel" id="section-hologram">
+                        <div class="preset-bar"><span style="font-size:0.75rem;color:var(--text-muted)">Presets:</span><button class="preset-btn" onclick="applyBuildPreset('vanilla')">Vanilla</button><button class="preset-btn" onclick="applyBuildPreset('buildanywhere')">Build Anywhere</button><button class="preset-btn" onclick="applyBuildPreset('relaxed')">Relaxed</button></div>
+                        <div class="info-box warning"><span class="icon">⚠</span><div class="content"><strong>Warning:</strong> Keep <strong>disableIsCollidingGPlotCheck</strong> false to prevent exploit rebuilding.</div></div>
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🔨</span>Hologram Checks</div>
+                            <div class="toggle-group"><div class="toggle-label">Disable BBox Check<span class="desc">Place inside objects</span></div><label class="toggle"><input type="checkbox" id="disableIsCollidingBBoxCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Player Check<span class="desc">Place where players stand</span></div><label class="toggle"><input type="checkbox" id="disableIsCollidingPlayerCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Roof Check<span class="desc">Clip through roofs</span></div><label class="toggle"><input type="checkbox" id="disableIsClippingRoofCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Base Viable Check<span class="desc">Place on dynamic objects</span></div><label class="toggle"><input type="checkbox" id="disableIsBaseViableCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable GPlot Check<span class="desc">Garden plots anywhere</span></div><label class="toggle"><input type="checkbox" id="disableIsCollidingGPlotCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Angle Check<span class="desc">Build on slopes</span></div><label class="toggle"><input type="checkbox" id="disableIsCollidingAngleCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Placement Permitted<span class="desc">Bypass basic checks</span></div><label class="toggle"><input type="checkbox" id="disableIsPlacementPermittedCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Height Check<span class="desc">Any height placement</span></div><label class="toggle"><input type="checkbox" id="disableHeightPlacementCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Underwater Check<span class="desc">Build underwater</span></div><label class="toggle"><input type="checkbox" id="disableIsUnderwaterCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Terrain Check<span class="desc">Clip into terrain</span></div><label class="toggle"><input type="checkbox" id="disableIsInTerrainCheck"><span class="toggle-slider"></span></label></div>
+                        </div>
+                    </div>
+                    <!-- Construction -->
+                    <div class="section-panel" id="section-construction">
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🏗</span>Construction Checks</div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Roof Check<span class="desc">Construct through roof</span></div><label class="toggle"><input type="checkbox" id="disablePerformRoofCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Colliding Check<span class="desc">Construct through objects</span></div><label class="toggle"><input type="checkbox" id="disableIsCollidingCheck"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Disable Distance Check<span class="desc">No player distance limit</span></div><label class="toggle"><input type="checkbox" id="disableDistanceCheck"><span class="toggle-slider"></span></label></div>
+                        </div>
+                    </div>
+                    <!-- Map -->
+                    <div class="section-panel" id="section-map">
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🗺</span>Map Settings</div>
+                            <div class="toggle-group"><div class="toggle-label">Use 3D Map<span class="desc">3D map only</span></div><label class="toggle"><input type="checkbox" id="use3DMap"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Ignore Map Ownership<span class="desc">Open map without item</span></div><label class="toggle"><input type="checkbox" id="ignoreMapOwnership"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Ignore Nav Items<span class="desc">Compass/GPS without items</span></div><label class="toggle"><input type="checkbox" id="ignoreNavItemsOwnership"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Display Player Position<span class="desc">Show marker on map</span></div><label class="toggle"><input type="checkbox" id="displayPlayerPosition"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-group"><div class="toggle-label">Display Nav Info<span class="desc">Show GPS/Compass UI</span></div><label class="toggle"><input type="checkbox" id="displayNavInfo" checked><span class="toggle-slider"></span></label></div>
+                        </div>
+                    </div>
+                    <!-- Hit Indicator -->
+                    <div class="section-panel" id="section-hitindicator">
+                        <div class="form-section">
+                            <div class="form-section-title"><span class="icon">🎯</span>Hit Indicator</div>
+                            <div class="toggle-group"><div class="toggle-label">Override Enabled<span class="desc">Use custom settings</span></div><label class="toggle"><input type="checkbox" id="hitDirectionOverrideEnabled"><span class="toggle-slider"></span></label></div>
+                            <div class="form-grid form-grid-3" style="margin-top:1rem">
+                                <div class="form-group"><label>Behaviour</label><select id="hitDirectionBehaviour"><option value="0">0 - Disabled</option><option value="1" selected>1 - Static</option><option value="2">2 - Dynamic</option></select></div>
+                                <div class="form-group"><label>Style</label><select id="hitDirectionStyle"><option value="0" selected>0 - Splash</option><option value="1">1 - Spike</option><option value="2">2 - Arrow</option></select></div>
+                                <div class="form-group"><label>Color (ARGB)</label><input type="text" id="hitDirectionIndicatorColorStr" value="0xffbb0a1e"></div>
+                                <div class="form-group"><label>Max Duration</label><input type="number" id="hitDirectionMaxDuration" value="2.0" step="0.1"></div>
+                                <div class="form-group"><label>Breakpoint</label><input type="number" id="hitDirectionBreakPointRelative" value="0.2" step="0.01"></div>
+                                <div class="form-group"><label>Scatter (deg)</label><input type="number" id="hitDirectionScatter" value="10.0" step="1"></div>
+                            </div>
+                            <div class="toggle-group" style="margin-top:1rem"><div class="toggle-label">Post Process Effect<span class="desc">Red flash when hit</span></div><label class="toggle"><input type="checkbox" id="hitIndicationPostProcessEnabled" checked><span class="toggle-slider"></span></label></div>
+                        </div>
+                    </div>
+                    <!-- Preview -->
+                    <div class="section-panel" id="section-preview">
+                        <div class="preview-container">
+                            <div class="preview-header"><span class="preview-title">cfggameplay.json</span><button class="btn btn-secondary" onclick="copyToClipboard()">Copy</button></div>
+                            <div class="preview-body"><pre id="jsonPreview"></pre></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer><div class="status-indicator"><div class="status-dot"></div><span id="statusText">Ready</span></div><div>DayZ 1.29 | Console Ready | YO4K MODZ</div></footer>
+    </div>
+<script>
+function showSection(id){document.querySelectorAll('.section-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('section-'+id).classList.add('active');document.querySelector(`.nav-item[data-section="${id}"]`).classList.add('active');if(id==='preview')updatePreview();}
+function updateVersionFromDayz(){const v=document.getElementById('dayzVersion').value;document.getElementById('version').value=v;}
+function validateConfig(){const errors=[];const staminaMax=parseFloat(document.getElementById('staminaMax').value);if(staminaMax<1||staminaMax>10000){errors.push('Stamina Max should be between 1 and 10000 (values > 200 cause visual bugs)');}const staminaMinCap=parseFloat(document.getElementById('staminaMinCap').value);if(staminaMinCap<0){errors.push('Stamina Min Cap cannot be negative');}for(let i=0;i<12;i++){const min=parseFloat(document.getElementById('minTemp'+i).value);const max=parseFloat(document.getElementById('maxTemp'+i).value);if(isNaN(min)||isNaN(max)){errors.push(`Month ${i+1}: Invalid temperature value`);}else if(min>max){errors.push(`Month ${i+1}: Min temp (${min}) cannot exceed max temp (${max})`);}}const wetnessFields=['wetnessModDry','wetnessModDamp','wetnessModWet','wetnessModSoaked','wetnessModDrenched'];for(const field of wetnessFields){const val=parseFloat(document.getElementById(field).value);if(isNaN(val)||val<0){errors.push(`Wetness modifier ${field.replace('wetnessModifier','')} must be a positive number`);}}return errors;}
+function buildJSON(){return{version:parseInt(document.getElementById('version').value)||129,GeneralData:{disableBaseDamage:document.getElementById('disableBaseDamage').checked,disableContainerDamage:document.getElementById('disableContainerDamage').checked,disableRespawnDialog:document.getElementById('disableRespawnDialog').checked,disableRespawnInUnconsciousness:document.getElementById('disableRespawnInUnconsciousness').checked,disableRespawnPoint:document.getElementById('disableRespawnPoint').checked},PlayerData:{disablePersonalLight:document.getElementById('disablePersonalLight').checked,StaminaData:{sprintStaminaModifierErc:parseFloat(document.getElementById('sprintStaminaModifierErc').value),sprintStaminaModifierCro:parseFloat(document.getElementById('sprintStaminaModifierCro').value),staminaWeightLimitThreshold:parseFloat(document.getElementById('staminaWeightLimitThreshold').value),staminaMax:parseFloat(document.getElementById('staminaMax').value),staminaKgToStaminaPercentPenalty:parseFloat(document.getElementById('staminaKgToStaminaPercentPenalty').value),staminaMinCap:parseFloat(document.getElementById('staminaMinCap').value),sprintSwimmingStaminaModifier:parseFloat(document.getElementById('sprintSwimmingStaminaModifier').value),sprintLadderStaminaModifier:parseFloat(document.getElementById('sprintLadderStaminaModifier').value),meleeStaminaModifier:parseFloat(document.getElementById('meleeStaminaModifier').value),obstacleTraversalStaminaModifier:parseFloat(document.getElementById('obstacleTraversalStaminaModifier').value),holdBreathStaminaModifier:parseFloat(document.getElementById('holdBreathStaminaModifier').value)},ShockHandlingData:{shockRefillSpeedConscious:parseFloat(document.getElementById('shockRefillSpeedConscious').value),shockRefillSpeedUnconscious:parseFloat(document.getElementById('shockRefillSpeedUnconscious').value),allowRefillSpeedModifier:document.getElementById('allowRefillSpeedModifier').checked},MovementData:{timeToStrafeJog:parseFloat(document.getElementById('timeToStrafeJog').value),rotationSpeedJog:parseFloat(document.getElementById('rotationSpeedJog').value),timeToSprint:parseFloat(document.getElementById('timeToSprint').value),timeToStrafeSprint:parseFloat(document.getElementById('timeToStrafeSprint').value),rotationSpeedSprint:parseFloat(document.getElementById('rotationSpeedSprint').value),allowStaminaAffectInertia:document.getElementById('allowStaminaAffectInertia').checked},DrowningData:{staminaDepletionSpeed:parseFloat(document.getElementById('drowningStaminaDepletionSpeed').value),healthDepletionSpeed:parseFloat(document.getElementById('drowningHealthDepletionSpeed').value),shockDepletionSpeed:parseFloat(document.getElementById('drowningShockDepletionSpeed').value)}},WorldsData:{lightingConfig:parseInt(document.getElementById('lightingConfig').value),objectSpawnersArr:[],environmentMinTemps:[...Array(12)].map((_,i)=>parseFloat(document.getElementById('minTemp'+i).value)),environmentMaxTemps:[...Array(12)].map((_,i)=>parseFloat(document.getElementById('maxTemp'+i).value)),wetnessWeightModifiers:[parseFloat(document.getElementById('wetnessModDry').value),parseFloat(document.getElementById('wetnessModDamp').value),parseFloat(document.getElementById('wetnessModWet').value),parseFloat(document.getElementById('wetnessModSoaked').value),parseFloat(document.getElementById('wetnessModDrenched').value)]},BaseBuildingData:{HologramData:{disableIsCollidingBBoxCheck:document.getElementById('disableIsCollidingBBoxCheck').checked,disableIsCollidingPlayerCheck:document.getElementById('disableIsCollidingPlayerCheck').checked,disableIsClippingRoofCheck:document.getElementById('disableIsClippingRoofCheck').checked,disableIsBaseViableCheck:document.getElementById('disableIsBaseViableCheck').checked,disableIsCollidingGPlotCheck:document.getElementById('disableIsCollidingGPlotCheck').checked,disableIsCollidingAngleCheck:document.getElementById('disableIsCollidingAngleCheck').checked,disableIsPlacementPermittedCheck:document.getElementById('disableIsPlacementPermittedCheck').checked,disableHeightPlacementCheck:document.getElementById('disableHeightPlacementCheck').checked,disableIsUnderwaterCheck:document.getElementById('disableIsUnderwaterCheck').checked,disableIsInTerrainCheck:document.getElementById('disableIsInTerrainCheck').checked},ConstructionData:{disablePerformRoofCheck:document.getElementById('disablePerformRoofCheck').checked,disableIsCollidingCheck:document.getElementById('disableIsCollidingCheck').checked,disableDistanceCheck:document.getElementById('disableDistanceCheck').checked}},UIData:{use3DMap:document.getElementById('use3DMap').checked,HitIndicationData:{hitDirectionOverrideEnabled:document.getElementById('hitDirectionOverrideEnabled').checked,hitDirectionBehaviour:parseInt(document.getElementById('hitDirectionBehaviour').value),hitDirectionStyle:parseInt(document.getElementById('hitDirectionStyle').value),hitDirectionIndicatorColorStr:document.getElementById('hitDirectionIndicatorColorStr').value,hitDirectionMaxDuration:parseFloat(document.getElementById('hitDirectionMaxDuration').value),hitDirectionBreakPointRelative:parseFloat(document.getElementById('hitDirectionBreakPointRelative').value),hitDirectionScatter:parseFloat(document.getElementById('hitDirectionScatter').value),hitIndicationPostProcessEnabled:document.getElementById('hitIndicationPostProcessEnabled').checked}},MapData:{ignoreMapOwnership:document.getElementById('ignoreMapOwnership').checked,ignoreNavItemsOwnership:document.getElementById('ignoreNavItemsOwnership').checked,displayPlayerPosition:document.getElementById('displayPlayerPosition').checked,displayNavInfo:document.getElementById('displayNavInfo').checked}};}
+function updatePreview(){const j=JSON.stringify(buildJSON(),null,4).replace(/"([^"]+)":/g,'<span class="key">"$1"</span>:').replace(/: "([^"]+)"/g,': <span class="string">"$1"</span>').replace(/: (\d+\.?\d*)/g,': <span class="number">$1</span>').replace(/: (true|false)/g,': <span class="boolean">$1</span>');document.getElementById('jsonPreview').innerHTML=j;}
+function exportJSON(){const errors=validateConfig();if(errors.length>0){const proceed=confirm('Validation warnings:\n\n'+errors.join('\n')+'\n\nExport anyway?');if(!proceed)return;}const jsonContent=JSON.stringify(buildJSON(),null,4).replace(/\r\n/g,'\n').replace(/\r/g,'\n')+'\n';const b=new Blob([jsonContent],{type:'application/json;charset=UTF-8'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download='cfggameplay.json';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),100);document.getElementById('statusText').textContent='Exported cfggameplay.json';}
+function importJSON(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{loadData(JSON.parse(ev.target.result));document.getElementById('statusText').textContent='Imported: '+f.name;}catch(err){alert('Error: '+err.message);}};r.readAsText(f);e.target.value='';}
+function loadData(d){if(d.version){document.getElementById('version').value=d.version;const dayzVersionSel=document.getElementById('dayzVersion');if(d.version>=129)dayzVersionSel.value='129';else if(d.version>=128)dayzVersionSel.value='128';else dayzVersionSel.value='127';}if(d.GeneralData){const g=d.GeneralData;['disableBaseDamage','disableContainerDamage','disableRespawnDialog','disableRespawnInUnconsciousness','disableRespawnPoint'].forEach(k=>{const el=document.getElementById(k);if(el&&g[k]!==undefined)el.checked=g[k];});}if(d.PlayerData){const p=d.PlayerData;if(p.disablePersonalLight!==undefined)document.getElementById('disablePersonalLight').checked=p.disablePersonalLight;if(p.StaminaData){const s=p.StaminaData;['staminaMax','staminaMinCap','staminaWeightLimitThreshold','staminaKgToStaminaPercentPenalty','sprintStaminaModifierErc','sprintStaminaModifierCro','sprintSwimmingStaminaModifier','sprintLadderStaminaModifier','meleeStaminaModifier','obstacleTraversalStaminaModifier','holdBreathStaminaModifier'].forEach(k=>{if(s[k]!==undefined)document.getElementById(k).value=s[k];});}if(p.ShockHandlingData){const sh=p.ShockHandlingData;if(sh.shockRefillSpeedConscious!==undefined)document.getElementById('shockRefillSpeedConscious').value=sh.shockRefillSpeedConscious;if(sh.shockRefillSpeedUnconscious!==undefined)document.getElementById('shockRefillSpeedUnconscious').value=sh.shockRefillSpeedUnconscious;if(sh.allowRefillSpeedModifier!==undefined)document.getElementById('allowRefillSpeedModifier').checked=sh.allowRefillSpeedModifier;}if(p.MovementData){const m=p.MovementData;['timeToStrafeJog','rotationSpeedJog','timeToSprint','timeToStrafeSprint','rotationSpeedSprint'].forEach(k=>{if(m[k]!==undefined)document.getElementById(k).value=m[k];});if(m.allowStaminaAffectInertia!==undefined)document.getElementById('allowStaminaAffectInertia').checked=m.allowStaminaAffectInertia;}if(p.DrowningData){const dr=p.DrowningData;if(dr.staminaDepletionSpeed!==undefined)document.getElementById('drowningStaminaDepletionSpeed').value=dr.staminaDepletionSpeed;if(dr.healthDepletionSpeed!==undefined)document.getElementById('drowningHealthDepletionSpeed').value=dr.healthDepletionSpeed;if(dr.shockDepletionSpeed!==undefined)document.getElementById('drowningShockDepletionSpeed').value=dr.shockDepletionSpeed;}}if(d.WorldsData){const w=d.WorldsData;if(w.lightingConfig!==undefined)document.getElementById('lightingConfig').value=w.lightingConfig;if(w.environmentMinTemps)for(let i=0;i<12;i++)document.getElementById('minTemp'+i).value=w.environmentMinTemps[i]||0;if(w.environmentMaxTemps)for(let i=0;i<12;i++)document.getElementById('maxTemp'+i).value=w.environmentMaxTemps[i]||0;if(w.wetnessWeightModifiers&&w.wetnessWeightModifiers.length===5){document.getElementById('wetnessModDry').value=w.wetnessWeightModifiers[0];document.getElementById('wetnessModDamp').value=w.wetnessWeightModifiers[1];document.getElementById('wetnessModWet').value=w.wetnessWeightModifiers[2];document.getElementById('wetnessModSoaked').value=w.wetnessWeightModifiers[3];document.getElementById('wetnessModDrenched').value=w.wetnessWeightModifiers[4];}}if(d.BaseBuildingData){if(d.BaseBuildingData.HologramData){const h=d.BaseBuildingData.HologramData;['disableIsCollidingBBoxCheck','disableIsCollidingPlayerCheck','disableIsClippingRoofCheck','disableIsBaseViableCheck','disableIsCollidingGPlotCheck','disableIsCollidingAngleCheck','disableIsPlacementPermittedCheck','disableHeightPlacementCheck','disableIsUnderwaterCheck','disableIsInTerrainCheck'].forEach(k=>{if(h[k]!==undefined)document.getElementById(k).checked=h[k];});}if(d.BaseBuildingData.ConstructionData){const c=d.BaseBuildingData.ConstructionData;['disablePerformRoofCheck','disableIsCollidingCheck','disableDistanceCheck'].forEach(k=>{if(c[k]!==undefined)document.getElementById(k).checked=c[k];});}}if(d.UIData){if(d.UIData.use3DMap!==undefined)document.getElementById('use3DMap').checked=d.UIData.use3DMap;if(d.UIData.HitIndicationData){const hi=d.UIData.HitIndicationData;if(hi.hitDirectionOverrideEnabled!==undefined)document.getElementById('hitDirectionOverrideEnabled').checked=hi.hitDirectionOverrideEnabled;if(hi.hitDirectionBehaviour!==undefined)document.getElementById('hitDirectionBehaviour').value=hi.hitDirectionBehaviour;if(hi.hitDirectionStyle!==undefined)document.getElementById('hitDirectionStyle').value=hi.hitDirectionStyle;if(hi.hitDirectionIndicatorColorStr!==undefined)document.getElementById('hitDirectionIndicatorColorStr').value=hi.hitDirectionIndicatorColorStr;if(hi.hitDirectionMaxDuration!==undefined)document.getElementById('hitDirectionMaxDuration').value=hi.hitDirectionMaxDuration;if(hi.hitDirectionBreakPointRelative!==undefined)document.getElementById('hitDirectionBreakPointRelative').value=hi.hitDirectionBreakPointRelative;if(hi.hitDirectionScatter!==undefined)document.getElementById('hitDirectionScatter').value=hi.hitDirectionScatter;if(hi.hitIndicationPostProcessEnabled!==undefined)document.getElementById('hitIndicationPostProcessEnabled').checked=hi.hitIndicationPostProcessEnabled;}}if(d.MapData){const md=d.MapData;['ignoreMapOwnership','ignoreNavItemsOwnership','displayPlayerPosition','displayNavInfo'].forEach(k=>{if(md[k]!==undefined)document.getElementById(k).checked=md[k];});}updatePreview();}
+async function copyToClipboard(){const json=JSON.stringify(buildJSON(),null,4);if(navigator.clipboard&&navigator.clipboard.writeText){try{await navigator.clipboard.writeText(json);document.getElementById('statusText').textContent='Copied!';return;}catch(err){console.warn('Clipboard API failed:',err);}}const textarea=document.createElement('textarea');textarea.value=json;textarea.style.position='fixed';textarea.style.left='-9999px';document.body.appendChild(textarea);textarea.select();try{document.execCommand('copy');document.getElementById('statusText').textContent='Copied!';}catch(err){alert('Copy failed. Please use Ctrl+C manually.');}document.body.removeChild(textarea);}
+function loadVanilla(){loadData({version:129,GeneralData:{disableBaseDamage:false,disableContainerDamage:false,disableRespawnDialog:false,disableRespawnInUnconsciousness:false,disableRespawnPoint:false},PlayerData:{disablePersonalLight:false,StaminaData:{sprintStaminaModifierErc:1,sprintStaminaModifierCro:1,staminaWeightLimitThreshold:6000,staminaMax:100,staminaKgToStaminaPercentPenalty:1.75,staminaMinCap:5,sprintSwimmingStaminaModifier:1,sprintLadderStaminaModifier:1,meleeStaminaModifier:1,obstacleTraversalStaminaModifier:1,holdBreathStaminaModifier:1},ShockHandlingData:{shockRefillSpeedConscious:5,shockRefillSpeedUnconscious:1,allowRefillSpeedModifier:true},MovementData:{timeToStrafeJog:0.1,rotationSpeedJog:0.3,timeToSprint:0.45,timeToStrafeSprint:0.3,rotationSpeedSprint:0.15,allowStaminaAffectInertia:true},DrowningData:{staminaDepletionSpeed:10,healthDepletionSpeed:10,shockDepletionSpeed:10}},WorldsData:{lightingConfig:1,environmentMinTemps:[-3,-2,0,4,9,14,18,17,12,7,4,0],environmentMaxTemps:[3,5,7,14,19,24,26,25,21,16,10,5],wetnessWeightModifiers:[1,1,1.33,1.66,2]},BaseBuildingData:{HologramData:{disableIsCollidingBBoxCheck:false,disableIsCollidingPlayerCheck:false,disableIsClippingRoofCheck:false,disableIsBaseViableCheck:false,disableIsCollidingGPlotCheck:false,disableIsCollidingAngleCheck:false,disableIsPlacementPermittedCheck:false,disableHeightPlacementCheck:false,disableIsUnderwaterCheck:false,disableIsInTerrainCheck:false},ConstructionData:{disablePerformRoofCheck:false,disableIsCollidingCheck:false,disableDistanceCheck:false}},UIData:{use3DMap:false,HitIndicationData:{hitDirectionOverrideEnabled:false,hitDirectionBehaviour:1,hitDirectionStyle:0,hitDirectionIndicatorColorStr:"0xffbb0a1e",hitDirectionMaxDuration:2,hitDirectionBreakPointRelative:0.2,hitDirectionScatter:10,hitIndicationPostProcessEnabled:true}},MapData:{ignoreMapOwnership:false,ignoreNavItemsOwnership:false,displayPlayerPosition:false,displayNavInfo:true}});document.getElementById('dayzVersion').value='129';document.getElementById('statusText').textContent='Loaded vanilla';}
+function resetAll(){if(confirm('Reset all?'))loadVanilla();}
+function applyStaminaPreset(p){const presets={vanilla:{staminaMax:100,staminaMinCap:5,staminaWeightLimitThreshold:6000,staminaKgToStaminaPercentPenalty:1.75,sprintStaminaModifierErc:1,sprintStaminaModifierCro:1,sprintSwimmingStaminaModifier:1,sprintLadderStaminaModifier:1,meleeStaminaModifier:1,obstacleTraversalStaminaModifier:1,holdBreathStaminaModifier:1},unlimited:{staminaMax:100,staminaMinCap:5,staminaWeightLimitThreshold:6000,staminaKgToStaminaPercentPenalty:0,sprintStaminaModifierErc:0,sprintStaminaModifierCro:0,sprintSwimmingStaminaModifier:0,sprintLadderStaminaModifier:0,meleeStaminaModifier:0,obstacleTraversalStaminaModifier:1,holdBreathStaminaModifier:0},hardcore:{staminaMax:80,staminaMinCap:3,staminaWeightLimitThreshold:4000,staminaKgToStaminaPercentPenalty:2.5,sprintStaminaModifierErc:1.5,sprintStaminaModifierCro:1.5,sprintSwimmingStaminaModifier:1.5,sprintLadderStaminaModifier:1.5,meleeStaminaModifier:1.5,obstacleTraversalStaminaModifier:1.5,holdBreathStaminaModifier:1.5},pvp:{staminaMax:10000,staminaMinCap:100,staminaWeightLimitThreshold:6000,staminaKgToStaminaPercentPenalty:0,sprintStaminaModifierErc:0.01,sprintStaminaModifierCro:0.01,sprintSwimmingStaminaModifier:0.01,sprintLadderStaminaModifier:0.01,meleeStaminaModifier:0.5,obstacleTraversalStaminaModifier:0.5,holdBreathStaminaModifier:0.01}};Object.entries(presets[p]).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v;});document.getElementById('statusText').textContent='Applied '+p+' stamina';}
+function applyShockPreset(p){const presets={vanilla:{shockRefillSpeedConscious:5,shockRefillSpeedUnconscious:1},fast:{shockRefillSpeedConscious:15,shockRefillSpeedUnconscious:10},slow:{shockRefillSpeedConscious:2,shockRefillSpeedUnconscious:0.5}};document.getElementById('shockRefillSpeedConscious').value=presets[p].shockRefillSpeedConscious;document.getElementById('shockRefillSpeedUnconscious').value=presets[p].shockRefillSpeedUnconscious;document.getElementById('statusText').textContent='Applied '+p+' shock';}
+function applyMovementPreset(p){const presets={vanilla:{timeToStrafeJog:0.1,rotationSpeedJog:0.3,timeToSprint:0.45,timeToStrafeSprint:0.3,rotationSpeedSprint:0.15},responsive:{timeToStrafeJog:0.05,rotationSpeedJog:0.5,timeToSprint:0.2,timeToStrafeSprint:0.15,rotationSpeedSprint:0.3},heavy:{timeToStrafeJog:0.2,rotationSpeedJog:0.15,timeToSprint:0.8,timeToStrafeSprint:0.5,rotationSpeedSprint:0.08}};Object.entries(presets[p]).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v;});document.getElementById('statusText').textContent='Applied '+p+' movement';}
+function applyTempPreset(p){const presets={chernarus:{min:[-3,-2,0,4,9,14,18,17,12,7,4,0],max:[3,5,7,14,19,24,26,25,21,16,10,5]},livonia:{min:[-5,-4,-1,3,8,12,15,14,10,5,2,-2],max:[1,3,6,12,17,22,24,23,19,13,8,3]},sakhal:{min:[-25,-22,-15,-8,-2,5,10,9,3,-5,-15,-22],max:[-15,-12,-5,2,8,15,20,18,12,3,-5,-12]},tropical:{min:[20,21,22,23,24,25,26,26,25,24,22,20],max:[28,29,30,32,34,35,36,36,34,32,30,28]},arctic:{min:[-40,-38,-30,-20,-10,-5,0,-2,-10,-20,-30,-38],max:[-25,-22,-15,-5,2,8,12,10,3,-5,-15,-22]}};for(let i=0;i<12;i++){document.getElementById('minTemp'+i).value=presets[p].min[i];document.getElementById('maxTemp'+i).value=presets[p].max[i];}document.getElementById('statusText').textContent='Applied '+p+' temps';}
+function applyBuildPreset(p){const checks=['disableIsCollidingBBoxCheck','disableIsCollidingPlayerCheck','disableIsClippingRoofCheck','disableIsBaseViableCheck','disableIsCollidingGPlotCheck','disableIsCollidingAngleCheck','disableIsPlacementPermittedCheck','disableHeightPlacementCheck','disableIsUnderwaterCheck','disableIsInTerrainCheck','disablePerformRoofCheck','disableIsCollidingCheck','disableDistanceCheck'];if(p==='vanilla')checks.forEach(c=>document.getElementById(c).checked=false);else if(p==='buildanywhere')checks.forEach(c=>document.getElementById(c).checked=c!=='disableIsCollidingGPlotCheck');else if(p==='relaxed'){document.getElementById('disableIsCollidingBBoxCheck').checked=true;document.getElementById('disableHeightPlacementCheck').checked=true;document.getElementById('disableIsInTerrainCheck').checked=true;document.getElementById('disableIsCollidingAngleCheck').checked=true;}document.getElementById('statusText').textContent='Applied '+p+' building';}
+document.addEventListener('DOMContentLoaded',()=>{loadVanilla();updatePreview();});
+</script>
+</body>
+</html>
